@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Bat Advisor</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM for functionality -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <!-- Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* A little extra style for a better look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://rsms.me/inter/inter.css');
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // The entire React App goes here
+        const { useState, useEffect } = React;
+
+        // --- Helper Components ---
+        const IconBat = () => (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-6 w-6">
+            <path d="m14.23 11.22 4.02 4.02" />
+            <path d="M5.12 13.59 2.5 11.12s-1-1.53.43-2.96l4.4-4.4a2.08 2.08 0 0 1 2.96.43l2.47 2.47" />
+            <path d="m15.26 12.29 2.47 2.47c1.53 1.53 0 3-0 3l-4.4 4.4s-1.53 1.53-2.96-.07l-4.02-4.02" />
+            <path d="m11.12 2.5 1.83 1.83" />
+            <path d="M4.5 4.5 6.33 6.33" />
+          </svg>
+        );
+
+        // --- Main Application Components ---
+        const questions = [
+          {
+            key: 'format',
+            text: 'What is your primary playing format?',
+            options: [
+              { value: 'T20', label: 'T20', description: 'Shortest format, emphasizes power hitting.' },
+              { value: 'One Day', label: 'One Day', description: 'A balance of power and technique.' },
+              { value: 'Test', label: 'Test', description: 'Prioritizes technique and durability.' },
+            ],
+          },
+          {
+            key: 'style',
+            text: 'How would you describe your playing style?',
+            options: [
+              { value: 'Aggressive', label: 'Aggressive', description: 'I like to hit boundaries and score quickly.' },
+              { value: 'Technical', label: 'Technical', description: 'I focus on timing and placement.' },
+              { value: 'All-rounder', label: 'All-rounder', description: 'A balanced approach to batting.' },
+            ],
+          },
+          {
+            key: 'weight',
+            text: 'What is your preferred bat weight?',
+            options: [
+              { value: 'Light', label: 'Light', description: '2lb 7oz - 2lb 9oz (Quicker bat speed)' },
+              { value: 'Medium', label: 'Medium', description: '2lb 10oz - 2lb 12oz (Good balance)' },
+              { value: 'Heavy', label: 'Heavy', description: 'Above 2lb 12oz (More power)' },
+            ],
+          },
+          {
+            key: 'balance',
+            text: 'Where do you prefer the balance of the bat?',
+            options: [
+              { value: 'Low', label: 'Low', description: 'Favors front-foot drives.' },
+              { value: 'Mid', label: 'Mid', description: 'Versatile for all types of shots.' },
+              { value: 'High', label: 'High', description: 'Suits back-foot cuts and pulls.' },
+            ],
+          },
+           {
+            key: 'surface',
+            text: 'On what type of pitches do you typically play?',
+            options: [
+                { value: 'Hard/Bouncy', label: 'Hard, Bouncy', description: 'e.g., Australia, South Africa' },
+                { value: 'Slow/Low', label: 'Slow, Low', description: 'e.g., Subcontinent' },
+                { value: 'Grassy/Seaming', label: 'Grassy, Seaming', description: 'e.g., England, New Zealand' },
+            ],
+          },
+          {
+            key: 'budget',
+            text: 'What is your approximate budget?',
+            type: 'slider',
+            min: 100,
+            max: 800,
+            step: 25,
+            defaultValue: 250,
+          },
+        ];
+
+        const batDatabase = [
+          { id: 1, name: 'Gray-Nicolls MAAX 5 Star', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Grassy/Seaming', price: 240, reason: "Renowned for its large sweet spot and excellent pick-up, ideal for technical players who value timing. The mid-blade profile is perfect for the all-around shot selection." },
+          { id: 2, name: 'Kookaburra Kahuna 6.0', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 220, reason: "A classic for a reason, the Kahuna offers a powerful profile with a light pick-up. Its mid-to-low sweet spot will favor your front-foot play on slower pitches." },
+          { id: 3, name: 'SG Sunny Tonny Classic', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Slow/Low', price: 275, reason: "Specifically designed for subcontinent pitches, this bat is known for its durability and balance. An excellent choice for a player looking for a bat that will last and perform consistently." },
+          { id: 4, name: 'GM Diamond 808', weight: 'Light', balance: 'High', style: 'Technical', surface: 'Grassy/Seaming', price: 300, reason: "With a high sweet spot, this bat is designed for players who love to cut and pull. Its light pick-up makes it easy to maneuver for delicate shots." },
+          { id: 5, name: 'MRF Genius Grand Edition', weight: 'Heavy', balance: 'Mid', style: 'Aggressive', surface: 'Hard/Bouncy', price: 450, reason: "Endorsed by legends, this bat is built for power. The extended sweet spot and heavier weight make it perfect for clearing the boundary on hard, bouncy tracks." },
+          { id: 6, name: 'New Balance DC 1080', weight: 'Light', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 350, reason: "Engineered for the dynamic player, its large edges and low sweet spot allow for explosive power off the front foot, making it a T20 specialist." },
+          { id: 7, name: 'SS Ton Gladiator', weight: 'Heavy', balance: 'Mid', style: 'All-rounder', surface: 'Hard/Bouncy', price: 400, reason: "A beast of a bat, the Gladiator uses hand-selected Super Grade I English Willow. It offers a massive profile and thick edges, ideal for dominating on any surface." },
+          { id: 8, name: 'Spartan MSD 7 Rock', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 200, reason: "Built for the aggressive, front-foot player. Its lower middle is perfect for subcontinent pitches, and the round handle provides excellent control for powerful hitting."},
+        ];
+
+        const getRecommendations = (answers) => {
+            let scores = batDatabase.map(bat => ({ ...bat, score: 0, reasons: [] }));
+
+            scores.forEach(bat => {
+                // Weight
+                if (bat.weight === answers.weight) {
+                    bat.score += 3;
+                    bat.reasons.push(`Matches your preferred ${answers.weight} weight.`);
+                }
+                // Balance
+                if (bat.balance === answers.balance) {
+                    bat.score += 3;
+                     bat.reasons.push(`The ${answers.balance} balance suits your style.`);
+                }
+                // Style & Format
+                if (bat.style === answers.style) {
+                    bat.score += 2;
+                     bat.reasons.push(`Designed for a ${answers.style} player.`);
+                }
+                if (answers.format === 'T20' && bat.style === 'Aggressive') bat.score += 2;
+                if (answers.format === 'Test' && bat.style === 'Technical') bat.score += 2;
+
+                // Surface
+                if (bat.surface === answers.surface) {
+                    bat.score += 2;
+                     bat.reasons.push(`Performs well on ${answers.surface} pitches.`);
+                }
+
+                // Budget
+                const priceDifference = Math.abs(bat.price - answers.budget);
+                if (priceDifference < 50) bat.score += 3;
+                else if (priceDifference < 100) bat.score += 1;
+            });
+
+            scores.sort((a, b) => b.score - a.score);
+            return scores.slice(0, 3);
+        };
+
+
+        function QuestionCard({ question, onAnswer, answers }) {
+          const [sliderValue, setSliderValue] = useState(question.defaultValue);
+
+          const handleSliderChange = (e) => {
+            setSliderValue(e.target.value);
+          };
+          
+          const handleSliderAnswer = () => {
+            onAnswer(question.key, parseInt(sliderValue));
+          }
+
+          if (question.type === 'slider') {
+            return (
+                <div className="w-full">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">{question.text}</h2>
+                     <div className="flex justify-center items-center my-6">
+                        <span className="text-3xl font-bold text-indigo-600">${sliderValue}</span>
+                     </div>
+                    <input
+                        type="range"
+                        min={question.min}
+                        max={question.max}
+                        step={question.step}
+                        value={sliderValue}
+                        onChange={handleSliderChange}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                     <div className="flex justify-between text-sm text-gray-500 mt-2">
+                        <span>${question.min}</span>
+                        <span>${question.max}</span>
+                    </div>
+                     <button onClick={handleSliderAnswer} className="w-full mt-8 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                        Next
+                    </button>
+                </div>
+            );
+          }
+
+          return (
+            <div className="w-full">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">{question.text}</h2>
+              <div className="grid grid-cols-1 gap-4">
+                {question.options.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => onAnswer(question.key, option.value)}
+                    className="text-left p-4 border rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <p className="font-semibold text-lg text-gray-800">{option.label}</p>
+                    <p className="text-sm text-gray-500">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        function AnalysisScreen() {
+            return (
+                <div className="text-center">
+                    <div className="relative inline-flex">
+                        <IconBat />
+                        <div className="w-12 h-12 bg-indigo-200 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-ping"></div>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mt-6">Analyzing Your Needs...</h2>
+                    <p className="text-gray-600 mt-2">Consulting our virtual experts to find your perfect match!</p>
+                </div>
+            );
+        }
+
+        function Recommendations({ recommendations, onRestart }) {
+            return (
+                <div className="w-full">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Your Top Recommendations</h2>
+                    <p className="text-center text-gray-500 mb-8">Based on your profile, here are the best bats for you.</p>
+                    <div className="space-y-6">
+                        {recommendations.map((bat, index) => (
+                            <div key={bat.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300">
+                                <div className="flex items-start">
+                                    <span className="text-indigo-500 font-bold text-3xl mr-4">#{index + 1}</span>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-900">{bat.name}</h3>
+                                        <p className="text-lg font-semibold text-indigo-600">${bat.price}</p>
+                                        <p className="mt-4 text-gray-700">{bat.reason}</p>
+                                        <div className="mt-4 text-sm text-gray-500">
+                                            <h4 className="font-semibold text-gray-600 mb-1">Why it fits you:</h4>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {bat.reasons.slice(0, 2).map((r, i) => <li key={i}>{r}</li>)}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <button onClick={onRestart} className="w-full mt-10 bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition duration-300 ease-in-out">
+                        Start Over
+                    </button>
+                </div>
+            );
+        }
+
+        function App() {
+          const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+          const [answers, setAnswers] = useState({});
+          const [status, setStatus] = useState('quiz'); // 'quiz', 'analyzing', 'results'
+          const [recommendations, setRecommendations] = useState([]);
+
+          useEffect(() => {
+            if (status === 'analyzing') {
+              const timer = setTimeout(() => {
+                const recs = getRecommendations(answers);
+                setRecommendations(recs);
+                setStatus('results');
+              }, 2000); // Simulate analysis time
+              return () => clearTimeout(timer);
+            }
+          }, [status, answers]);
+
+          const handleAnswer = (key, value) => {
+            const newAnswers = { ...answers, [key]: value };
+            setAnswers(newAnswers);
+
+            if (currentQuestionIndex < questions.length - 1) {
+              setCurrentQuestionIndex(currentQuestionIndex + 1);
+            } else {
+              setStatus('analyzing');
+            }
+          };
+          
+          const handleRestart = () => {
+              setAnswers({});
+              setCurrentQuestionIndex(0);
+              setRecommendations([]);
+              setStatus('quiz');
+          }
+
+          const progress = (currentQuestionIndex / questions.length) * 100;
+
+          return (
+            <div className="font-sans flex flex-col items-center justify-center min-h-screen p-4">
+              <div className="w-full max-w-2xl mx-auto">
+                <header className="text-center mb-8">
+                    <div className="flex items-center justify-center text-3xl font-bold text-gray-800">
+                        <IconBat />
+                        <h1>Cricket Bat Advisor</h1>
+                    </div>
+                     <p className="text-gray-500 mt-2">Find your perfect bat with our expert AI</p>
+                </header>
+
+                <main className="bg-white rounded-xl shadow-xl p-6 md:p-10 flex items-center justify-center" style={{ minHeight: '450px' }}>
+                    <div className="w-full">
+                        {status === 'quiz' && (
+                          <>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+                                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }}></div>
+                            </div>
+                            <QuestionCard
+                              question={questions[currentQuestionIndex]}
+                              onAnswer={handleAnswer}
+                              answers={answers}
+                            />
+                          </>
+                        )}
+                        {status === 'analyzing' && <AnalysisScreen />}
+                        {status === 'results' && <Recommendations recommendations={recommendations} onRestart={handleRestart} />}
+                    </div>
+                </main>
+                <footer className="text-center mt-8 text-sm text-gray-400">
+                    <p>&copy; {new Date().getFullYear()} Cricket Bat Advisor. All Rights Reserved.</p>
+                </footer>
+              </div>
+            </div>
+          );
+        }
+
+        // --- Render the App ---
+        ReactDOM.render(<App />, document.getElementById('root'));
+
+    </script>
+</body>
+</html>
