@@ -11,15 +11,27 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <!-- Babel to transpile JSX in the browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* A little extra style for a better look and feel */
-        body {
-            font-family: 'Inter', sans-serif;
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom checkbox style for comparison */
+        .compare-checkbox:checked {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
         }
-        @import url('https://rsms.me/inter/inter.css');
+        .compare-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            display: block;
+            text-align: center;
+            line-height: 1.2;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -37,221 +49,310 @@
           </svg>
         );
 
-        // --- Main Application Components ---
-        const questions = [
-          {
-            key: 'format',
-            text: 'What is your primary playing format?',
-            options: [
-              { value: 'T20', label: 'T20', description: 'Shortest format, emphasizes power hitting.' },
-              { value: 'One Day', label: 'One Day', description: 'A balance of power and technique.' },
-              { value: 'Test', label: 'Test', description: 'Prioritizes technique and durability.' },
-            ],
-          },
-          {
-            key: 'style',
-            text: 'How would you describe your playing style?',
-            options: [
-              { value: 'Aggressive', label: 'Aggressive', description: 'I like to hit boundaries and score quickly.' },
-              { value: 'Technical', label: 'Technical', description: 'I focus on timing and placement.' },
-              { value: 'All-rounder', label: 'All-rounder', description: 'A balanced approach to batting.' },
-            ],
-          },
-          {
-            key: 'weight',
-            text: 'What is your preferred bat weight?',
-            options: [
-              { value: 'Light', label: 'Light', description: '2lb 7oz - 2lb 9oz (Quicker bat speed)' },
-              { value: 'Medium', label: 'Medium', description: '2lb 10oz - 2lb 12oz (Good balance)' },
-              { value: 'Heavy', label: 'Heavy', description: 'Above 2lb 12oz (More power)' },
-            ],
-          },
-          {
-            key: 'balance',
-            text: 'Where do you prefer the balance of the bat?',
-            options: [
-              { value: 'Low', label: 'Low', description: 'Favors front-foot drives.' },
-              { value: 'Mid', label: 'Mid', description: 'Versatile for all types of shots.' },
-              { value: 'High', label: 'High', description: 'Suits back-foot cuts and pulls.' },
-            ],
-          },
-           {
-            key: 'surface',
-            text: 'On what type of pitches do you typically play?',
-            options: [
-                { value: 'Hard/Bouncy', label: 'Hard, Bouncy', description: 'e.g., Australia, South Africa' },
-                { value: 'Slow/Low', label: 'Slow, Low', description: 'e.g., Subcontinent' },
-                { value: 'Grassy/Seaming', label: 'Grassy, Seaming', description: 'e.g., England, New Zealand' },
-            ],
-          },
-          {
-            key: 'budget',
-            text: 'What is your approximate budget?',
-            type: 'slider',
-            min: 100,
-            max: 800,
-            step: 25,
-            defaultValue: 250,
-          },
+        // --- Configuration & Data ---
+        const countryData = {
+            'India': { currency: '₹', min: 5000, max: 60000, step: 1000 },
+            'Australia': { currency: '$', min: 150, max: 1200, step: 25 },
+            'UK': { currency: '£', min: 100, max: 900, step: 20 },
+            'USA': { currency: '$', min: 120, max: 1000, step: 20 },
+            'Other': { currency: '$', min: 100, max: 800, step: 25 },
+        };
+        
+        const initialQuestions = [
+            {
+                key: 'country',
+                text: 'Which country are you buying from?',
+                options: [
+                    { value: 'India', label: 'India' },
+                    { value: 'Australia', label: 'Australia' },
+                    { value: 'UK', label: 'United Kingdom' },
+                    { value: 'USA', label: 'United States' },
+                    { value: 'Other', label: 'Other' },
+                ],
+            },
+            {
+                key: 'format',
+                text: 'What is your primary playing format?',
+                options: [
+                  { value: 'T20', label: 'T20', description: 'Shortest format, emphasizes power hitting.' },
+                  { value: 'One Day', label: 'One Day', description: 'A balance of power and technique.' },
+                  { value: 'Test', label: 'Test', description: 'Prioritizes technique and durability.' },
+                ],
+            },
+            // ... other questions are added dynamically
+        ];
+        
+        const batDatabase = [
+            // Prices are in USD for base calculation
+            { id: 1, name: 'Gray-Nicolls MAAX 5 Star', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Grassy/Seaming', price: 240, countryAvailability: ['UK', 'Australia', 'Other'], reason: "Renowned for its large sweet spot and excellent pick-up, ideal for technical players who value timing." },
+            { id: 2, name: 'Kookaburra Kahuna 6.0', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 220, countryAvailability: ['Australia', 'India', 'UK', 'Other'], reason: "A classic for a reason, the Kahuna offers a powerful profile with a light pick-up, favoring front-foot play." },
+            { id: 3, name: 'SG Sunny Tonny Classic', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Slow/Low', price: 275, countryAvailability: ['India', 'USA', 'Other'], reason: "Specifically designed for subcontinent pitches, this bat is known for its durability and balance." },
+            { id: 4, name: 'GM Diamond 808', weight: 'Light', balance: 'High', style: 'Technical', surface: 'Grassy/Seaming', price: 300, countryAvailability: ['UK', 'Australia', 'Other'], reason: "With a high sweet spot, this bat is designed for players who love to cut and pull. Its light pick-up makes it easy to maneuver." },
+            { id: 5, name: 'MRF Genius Grand Edition', weight: 'Heavy', balance: 'Mid', style: 'Aggressive', surface: 'Hard/Bouncy', price: 450, countryAvailability: ['India', 'Australia', 'USA'], reason: "Endorsed by legends, this bat is built for power. The extended sweet spot and heavier weight make it perfect for clearing the boundary." },
+            { id: 6, name: 'New Balance DC 1080', weight: 'Light', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 350, countryAvailability: ['USA', 'UK', 'India'], reason: "Engineered for the dynamic player, its large edges and low sweet spot allow for explosive power off the front foot." },
+            { id: 7, name: 'SS Ton Gladiator', weight: 'Heavy', balance: 'Mid', style: 'All-rounder', surface: 'Hard/Bouncy', price: 400, countryAvailability: ['India', 'USA', 'Other'], reason: "A beast of a bat, the Gladiator uses hand-selected Super Grade I English Willow and offers a massive profile." },
+            { id: 8, name: 'Spartan MSD 7 Rock', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 200, countryAvailability: ['India', 'Australia', 'Other'], reason: "Built for the aggressive, front-foot player. Its lower middle is perfect for subcontinent pitches."},
         ];
 
-        const batDatabase = [
-          { id: 1, name: 'Gray-Nicolls MAAX 5 Star', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Grassy/Seaming', price: 240, reason: "Renowned for its large sweet spot and excellent pick-up, ideal for technical players who value timing. The mid-blade profile is perfect for the all-around shot selection." },
-          { id: 2, name: 'Kookaburra Kahuna 6.0', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 220, reason: "A classic for a reason, the Kahuna offers a powerful profile with a light pick-up. Its mid-to-low sweet spot will favor your front-foot play on slower pitches." },
-          { id: 3, name: 'SG Sunny Tonny Classic', weight: 'Medium', balance: 'Mid', style: 'Technical', surface: 'Slow/Low', price: 275, reason: "Specifically designed for subcontinent pitches, this bat is known for its durability and balance. An excellent choice for a player looking for a bat that will last and perform consistently." },
-          { id: 4, name: 'GM Diamond 808', weight: 'Light', balance: 'High', style: 'Technical', surface: 'Grassy/Seaming', price: 300, reason: "With a high sweet spot, this bat is designed for players who love to cut and pull. Its light pick-up makes it easy to maneuver for delicate shots." },
-          { id: 5, name: 'MRF Genius Grand Edition', weight: 'Heavy', balance: 'Mid', style: 'Aggressive', surface: 'Hard/Bouncy', price: 450, reason: "Endorsed by legends, this bat is built for power. The extended sweet spot and heavier weight make it perfect for clearing the boundary on hard, bouncy tracks." },
-          { id: 6, name: 'New Balance DC 1080', weight: 'Light', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 350, reason: "Engineered for the dynamic player, its large edges and low sweet spot allow for explosive power off the front foot, making it a T20 specialist." },
-          { id: 7, name: 'SS Ton Gladiator', weight: 'Heavy', balance: 'Mid', style: 'All-rounder', surface: 'Hard/Bouncy', price: 400, reason: "A beast of a bat, the Gladiator uses hand-selected Super Grade I English Willow. It offers a massive profile and thick edges, ideal for dominating on any surface." },
-          { id: 8, name: 'Spartan MSD 7 Rock', weight: 'Medium', balance: 'Low', style: 'Aggressive', surface: 'Slow/Low', price: 200, reason: "Built for the aggressive, front-foot player. Its lower middle is perfect for subcontinent pitches, and the round handle provides excellent control for powerful hitting."},
-        ];
+        // --- App Logic ---
+        function getPriceForCountry(basePrice, country) {
+            // Simplified conversion for demonstration
+            switch (country) {
+                case 'India': return basePrice * 75;
+                case 'UK': return basePrice * 0.8;
+                case 'Australia': return basePrice * 1.4;
+                default: return basePrice; // USA / Other
+            }
+        }
 
         const getRecommendations = (answers) => {
-            let scores = batDatabase.map(bat => ({ ...bat, score: 0, reasons: [] }));
+            const country = answers.country || 'Other';
+            
+            let availableBats = batDatabase.filter(bat => bat.countryAvailability.includes(country));
+
+            let scores = availableBats.map(bat => ({ ...bat, score: 0, reasons: [] }));
 
             scores.forEach(bat => {
-                // Weight
-                if (bat.weight === answers.weight) {
-                    bat.score += 3;
-                    bat.reasons.push(`Matches your preferred ${answers.weight} weight.`);
-                }
-                // Balance
-                if (bat.balance === answers.balance) {
-                    bat.score += 3;
-                     bat.reasons.push(`The ${answers.balance} balance suits your style.`);
-                }
-                // Style & Format
-                if (bat.style === answers.style) {
-                    bat.score += 2;
-                     bat.reasons.push(`Designed for a ${answers.style} player.`);
-                }
+                if (bat.weight === answers.weight) { bat.score += 3; bat.reasons.push(`Matches your preferred ${answers.weight} weight.`); }
+                if (bat.balance === answers.balance) { bat.score += 3; bat.reasons.push(`The ${answers.balance} balance suits your style.`); }
+                if (bat.style === answers.style) { bat.score += 2; bat.reasons.push(`Designed for a ${answers.style} player.`); }
                 if (answers.format === 'T20' && bat.style === 'Aggressive') bat.score += 2;
                 if (answers.format === 'Test' && bat.style === 'Technical') bat.score += 2;
-
-                // Surface
-                if (bat.surface === answers.surface) {
-                    bat.score += 2;
-                     bat.reasons.push(`Performs well on ${answers.surface} pitches.`);
-                }
-
-                // Budget
-                const priceDifference = Math.abs(bat.price - answers.budget);
-                if (priceDifference < 50) bat.score += 3;
-                else if (priceDifference < 100) bat.score += 1;
+                if (bat.surface === answers.surface) { bat.score += 2; bat.reasons.push(`Performs well on ${answers.surface} pitches.`); }
+                
+                const countryPrice = getPriceForCountry(bat.price, country);
+                const priceDifference = Math.abs(countryPrice - answers.budget);
+                const budgetRange = countryData[country].max - countryData[country].min;
+                if (priceDifference < budgetRange * 0.1) bat.score += 3;
+                else if (priceDifference < budgetRange * 0.2) bat.score += 1;
             });
 
             scores.sort((a, b) => b.score - a.score);
             return scores.slice(0, 3);
         };
-
-
+        
+        // --- UI Components ---
         function QuestionCard({ question, onAnswer, answers }) {
-          const [sliderValue, setSliderValue] = useState(question.defaultValue);
+            const [sliderValue, setSliderValue] = useState(question.defaultValue || question.min);
 
-          const handleSliderChange = (e) => {
-            setSliderValue(e.target.value);
-          };
-          
-          const handleSliderAnswer = () => {
-            onAnswer(question.key, parseInt(sliderValue));
-          }
+            const handleSliderChange = (e) => setSliderValue(e.target.value);
+            const handleSliderAnswer = () => onAnswer(question.key, parseInt(sliderValue));
 
-          if (question.type === 'slider') {
+            if (question.type === 'slider') {
+                return (
+                    <div className="w-full">
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">{question.text}</h2>
+                         <div className="flex justify-center items-center my-6">
+                            <span className="text-3xl font-bold text-indigo-600">{question.currency}{sliderValue}</span>
+                         </div>
+                        <input
+                            type="range" min={question.min} max={question.max} step={question.step}
+                            value={sliderValue || ''} onChange={handleSliderChange}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        />
+                         <div className="flex justify-between text-sm text-gray-500 mt-2">
+                            <span>{question.currency}{question.min}</span>
+                            <span>{question.currency}{question.max}</span>
+                        </div>
+                         <button onClick={handleSliderAnswer} className="w-full mt-8 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                            Next
+                        </button>
+                    </div>
+                );
+            }
+
             return (
                 <div className="w-full">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">{question.text}</h2>
-                     <div className="flex justify-center items-center my-6">
-                        <span className="text-3xl font-bold text-indigo-600">${sliderValue}</span>
-                     </div>
-                    <input
-                        type="range"
-                        min={question.min}
-                        max={question.max}
-                        step={question.step}
-                        value={sliderValue}
-                        onChange={handleSliderChange}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                    />
-                     <div className="flex justify-between text-sm text-gray-500 mt-2">
-                        <span>${question.min}</span>
-                        <span>${question.max}</span>
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">{question.text}</h2>
+                    <div className="grid grid-cols-1 gap-4">
+                        {question.options.map((option) => (
+                            <button
+                                key={option.value}
+                                onClick={() => onAnswer(question.key, option.value)}
+                                className="text-left p-4 border rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <p className="font-semibold text-lg text-gray-800">{option.label}</p>
+                                {option.description && <p className="text-sm text-gray-500">{option.description}</p>}
+                            </button>
+                        ))}
                     </div>
-                     <button onClick={handleSliderAnswer} className="w-full mt-8 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
-                        Next
-                    </button>
                 </div>
             );
-          }
-
-          return (
-            <div className="w-full">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center">{question.text}</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {question.options.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => onAnswer(question.key, option.value)}
-                    className="text-left p-4 border rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <p className="font-semibold text-lg text-gray-800">{option.label}</p>
-                    <p className="text-sm text-gray-500">{option.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
         }
 
         function AnalysisScreen() {
             return (
                 <div className="text-center">
-                    <div className="relative inline-flex">
-                        <IconBat />
-                        <div className="w-12 h-12 bg-indigo-200 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-ping"></div>
+                    <div className="relative inline-flex items-center justify-center w-24 h-24">
+                       <div className="w-20 h-20 bg-indigo-200 rounded-full absolute animate-ping"></div>
+                       <IconBat />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800 mt-6">Analyzing Your Needs...</h2>
                     <p className="text-gray-600 mt-2">Consulting our virtual experts to find your perfect match!</p>
                 </div>
             );
         }
+        
+        function CompareModal({ bats, onClose }) {
+            if (!bats || bats.length === 0) return null;
 
-        function Recommendations({ recommendations, onRestart }) {
+            const fields = ['weight', 'balance', 'style', 'surface'];
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-full overflow-y-auto">
+                        <div className="p-6 border-b sticky top-0 bg-white">
+                           <h2 className="text-2xl font-bold text-gray-800">Compare Bats</h2>
+                           <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">&times;</button>
+                        </div>
+                        <div className="p-6">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th className="py-2 px-4 bg-gray-50 font-semibold">Feature</th>
+                                        {bats.map(bat => <th key={bat.id} className="py-2 px-4 bg-gray-50 font-semibold">{bat.name}</th>)}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {fields.map(field => (
+                                        <tr key={field} className="border-t">
+                                            <td className="py-3 px-4 font-semibold capitalize">{field}</td>
+                                            {bats.map(bat => <td key={bat.id} className="py-3 px-4">{bat[field]}</td>)}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                         <div className="p-6 border-t text-right">
+                           <button onClick={onClose} className="bg-gray-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-800 transition duration-300">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function Recommendations({ recommendations, onRestart, country }) {
+            const [compareList, setCompareList] = useState([]);
+            const [showCompare, setShowCompare] = useState(false);
+
+            const handleCompareChange = (batId) => {
+                setCompareList(prev => 
+                    prev.includes(batId) ? prev.filter(id => id !== batId) : [...prev, batId]
+                );
+            };
+
+            const compareBats = recommendations.filter(bat => compareList.includes(bat.id));
+
             return (
                 <div className="w-full">
+                    {showCompare && <CompareModal bats={compareBats} onClose={() => setShowCompare(false)} />}
                     <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Your Top Recommendations</h2>
                     <p className="text-center text-gray-500 mb-8">Based on your profile, here are the best bats for you.</p>
                     <div className="space-y-6">
-                        {recommendations.map((bat, index) => (
-                            <div key={bat.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300">
-                                <div className="flex items-start">
-                                    <span className="text-indigo-500 font-bold text-3xl mr-4">#{index + 1}</span>
-                                    <div>
-                                        <h3 className="text-2xl font-bold text-gray-900">{bat.name}</h3>
-                                        <p className="text-lg font-semibold text-indigo-600">${bat.price}</p>
-                                        <p className="mt-4 text-gray-700">{bat.reason}</p>
-                                        <div className="mt-4 text-sm text-gray-500">
-                                            <h4 className="font-semibold text-gray-600 mb-1">Why it fits you:</h4>
-                                            <ul className="list-disc list-inside space-y-1">
-                                                {bat.reasons.slice(0, 2).map((r, i) => <li key={i}>{r}</li>)}
-                                            </ul>
+                        {recommendations.map((bat, index) => {
+                            const countryPrice = getPriceForCountry(bat.price, country);
+                            const currency = countryData[country].currency;
+                            return (
+                                <div key={bat.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300">
+                                    <div className="flex items-start">
+                                        <span className="text-indigo-500 font-bold text-3xl mr-4">#{index + 1}</span>
+                                        <div className="flex-grow">
+                                            <h3 className="text-2xl font-bold text-gray-900">{bat.name}</h3>
+                                            <p className="text-lg font-semibold text-indigo-600">{currency}{Math.round(countryPrice)}</p>
+                                            <p className="mt-4 text-gray-700">{bat.reason}</p>
+                                            <div className="mt-4 text-sm text-gray-500">
+                                                <h4 className="font-semibold text-gray-600 mb-1">Why it fits you:</h4>
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    {bat.reasons.slice(0, 2).map((r, i) => <li key={i}>{r}</li>)}
+                                                </ul>
+                                            </div>
+                                            <button className="mt-4 text-sm bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition">Find a Local Retailer</button>
+                                        </div>
+                                        <div className="flex items-center ml-4">
+                                            <label htmlFor={`compare-${bat.id}`} className="text-sm text-gray-600 mr-2">Compare</label>
+                                            <input type="checkbox" id={`compare-${bat.id}`} 
+                                                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 compare-checkbox appearance-none"
+                                                checked={compareList.includes(bat.id)}
+                                                onChange={() => handleCompareChange(bat.id)}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-                    <button onClick={onRestart} className="w-full mt-10 bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition duration-300 ease-in-out">
-                        Start Over
-                    </button>
+                    <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                         <button onClick={onRestart} className="w-full bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition duration-300 ease-in-out">
+                            Start Over
+                        </button>
+                        <button 
+                            onClick={() => setShowCompare(true)} 
+                            disabled={compareList.length < 2}
+                            className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            Compare ({compareList.length}) Selected
+                        </button>
+                    </div>
                 </div>
             );
         }
-
+        
+        // --- Main App Component ---
         function App() {
+          const [questions, setQuestions] = useState(initialQuestions);
           const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
           const [answers, setAnswers] = useState({});
           const [status, setStatus] = useState('quiz'); // 'quiz', 'analyzing', 'results'
           const [recommendations, setRecommendations] = useState([]);
+
+          useEffect(() => {
+            if (answers.country) {
+                const countryConfig = countryData[answers.country];
+                const budgetQuestion = {
+                    key: 'budget', text: 'What is your approximate budget?', type: 'slider', 
+                    ...countryConfig, defaultValue: countryConfig.min
+                };
+                const otherQuestions = [
+                    { 
+                        key: 'style', 
+                        text: 'How would you describe your playing style?', 
+                        options: [
+                            { value: 'Aggressive', label: 'Aggressive', description: 'I like to hit boundaries and score quickly.' }, 
+                            { value: 'Technical', label: 'Technical', description: 'I focus on timing and placement.' }, 
+                            { value: 'All-rounder', label: 'All-rounder', description: 'A balanced approach to batting.' }
+                        ] 
+                    },
+                    { 
+                        key: 'weight', 
+                        text: 'What is your preferred bat weight?', 
+                        options: [
+                            { value: 'Light', label: 'Light', description: '2lb 7oz - 2lb 9oz (Quicker bat speed)' }, 
+                            { value: 'Medium', label: 'Medium', description: '2lb 10oz - 2lb 12oz (Good balance)' }, 
+                            { value: 'Heavy', label: 'Heavy', description: 'Above 2lb 12oz (More power)' }
+                        ] 
+                    },
+                    { 
+                        key: 'balance', 
+                        text: 'Where do you prefer the balance of the bat?', 
+                        options: [
+                            { value: 'Low', label: 'Low', description: 'Favors front-foot drives.' },
+                            { value: 'Mid', label: 'Mid', description: 'Versatile for all types of shots.' },
+                            { value: 'High', label: 'High', description: 'Suits back-foot cuts and pulls.' }
+                        ]
+                    },
+                    { 
+                        key: 'surface', 
+                        text: 'On what type of pitches do you typically play?', 
+                        options: [
+                            { value: 'Hard/Bouncy', label: 'Hard, Bouncy', description: 'e.g., Australia, South Africa' },
+                            { value: 'Slow/Low', label: 'Slow, Low', description: 'e.g., Subcontinent' },
+                            { value: 'Grassy/Seaming', label: 'Grassy, Seaming', description: 'e.g., England, New Zealand' }
+                        ] 
+                    },
+                ];
+                setQuestions([initialQuestions[0], initialQuestions[1], ...otherQuestions, budgetQuestion]);
+            }
+          }, [answers.country]);
 
           useEffect(() => {
             if (status === 'analyzing') {
@@ -259,7 +360,7 @@
                 const recs = getRecommendations(answers);
                 setRecommendations(recs);
                 setStatus('results');
-              }, 2000); // Simulate analysis time
+              }, 2000);
               return () => clearTimeout(timer);
             }
           }, [status, answers]);
@@ -279,6 +380,7 @@
               setAnswers({});
               setCurrentQuestionIndex(0);
               setRecommendations([]);
+              setQuestions(initialQuestions);
               setStatus('quiz');
           }
 
@@ -295,14 +397,15 @@
                      <p className="text-gray-500 mt-2">Find your perfect bat with our expert AI</p>
                 </header>
 
-                <main className="bg-white rounded-xl shadow-xl p-6 md:p-10 flex items-center justify-center" style={{ minHeight: '450px' }}>
+                <main className="bg-white rounded-xl shadow-2xl p-6 md:p-10 flex items-center justify-center" style={{ minHeight: '450px' }}>
                     <div className="w-full">
                         {status === 'quiz' && (
                           <>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
-                                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }}></div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+                                <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }}></div>
                             </div>
                             <QuestionCard
+                              key={questions[currentQuestionIndex].key}
                               question={questions[currentQuestionIndex]}
                               onAnswer={handleAnswer}
                               answers={answers}
@@ -310,7 +413,7 @@
                           </>
                         )}
                         {status === 'analyzing' && <AnalysisScreen />}
-                        {status === 'results' && <Recommendations recommendations={recommendations} onRestart={handleRestart} />}
+                        {status === 'results' && <Recommendations recommendations={recommendations} onRestart={handleRestart} country={answers.country} />}
                     </div>
                 </main>
                 <footer className="text-center mt-8 text-sm text-gray-400">
